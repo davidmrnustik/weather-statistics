@@ -1,28 +1,37 @@
 #include "WeatherStatistics.h"
 
-WeatherStatistics::WeatherStatistics()
-{
-    loadData();
+vector<string> WeatherStatistics::filenames = {
+    "Environmental_Data_Deep_Moor_2012.txt",
+    "Environmental_Data_Deep_Moor_2013.txt",
+    "Environmental_Data_Deep_Moor_2014.txt",
+    "Environmental_Data_Deep_Moor_2015.txt"
+};
+
+vector<string> WeatherStatistics::getFilePath(string prefix, vector<string> files) {
+    vector<string> filePath;
+
+    for (string& filename: files) {
+        ostringstream pathStream;
+        pathStream << prefix << filename;
+
+        filePath.emplace_back(pathStream.str());
+    }
+
+    return filePath;
 }
 
-void WeatherStatistics::loadData()
+WeatherStatistics::WeatherStatistics(vector<string> files)
 {
-    vector<string> filenames = {
-        "Environmental_Data_Deep_Moor_2012.txt",
-        "Environmental_Data_Deep_Moor_2013.txt",
-        "Environmental_Data_Deep_Moor_2014.txt",
-        "Environmental_Data_Deep_Moor_2015.txt"
-    };
+    loadData(files);
+}
 
-    for(string& filename: filenames) {
+void WeatherStatistics::loadData(vector<string> files)
+{
+    for(string& filename: files) {
         ifstream ifs;
-        ostringstream pathStream;
-        pathStream << RESOURCE_PATH << filename;
 
-        string path = pathStream.str();
-
-        ifs.open(path);
-        cout << "Loading " << path << endl;
+        ifs.open(filename);
+        cout << "Loading " << filename << endl;
 
         if (!ifs)
             throw runtime_error("couldn't open a file");
@@ -43,9 +52,6 @@ void WeatherStatistics::loadData()
 
             time_t dateTime = convertDateTime(date, time);
             timeToBarometricPressure[dateTime] = barometric_press;
-
-            // auto fields = parseRow(line);
-            // weatherData.push_back(fields);
         }
 
         ifs.close();
@@ -114,62 +120,4 @@ double WeatherStatistics::getCoefficient(string start_date, string start_time, s
     double barometricPressureDiff = endDateTimeBarometricPressure->second - startDateTimeBarometricPressure->second;
 
     return barometricPressureDiff / timeDiff;
-}
-
-// Previous solution for parsing a row
-// Example of row: 2012_01_01 00:02:14	34.30	30.50	26.90	74.20	346.40	11.00	 3.60
-vector<string> WeatherStatistics::parseRow(const string& s)
-{
-    vector<string> fields {""};
-
-    size_t i = 0;
-
-    for(char c: s)
-    {
-        switch (c)
-        {
-            case '\r':
-                i++;
-                break;
-            case '\t':
-                fields.emplace_back("");
-                i++;
-                break;
-            case ' ':
-                if (i == 0) {
-                    fields.emplace_back("");
-                    i++;
-                    break;
-                }
-            default:
-                fields[i].push_back(c);
-        }
-    }
-    return fields;
-}
-
-// Previous solution for reading a row/line
-void WeatherStatistics::readFile(string filename, table_type *data)
-{
-    ifstream ifs;
-    filename = "resources/" + filename;
-
-    ifs.open(filename);
-    cout << "Loading " << filename << endl;
-
-    if (!ifs)
-        throw runtime_error("couldn't open a file");
-
-    string s;
-    int i = 0;
-
-    while(getline(ifs, s))
-    {
-        i++;
-        if (i <= 1) continue;
-        auto fields = parseRow(s);
-        data->push_back(fields);
-    }
-
-    ifs.close();
 }
